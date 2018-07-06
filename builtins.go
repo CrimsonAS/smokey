@@ -3,9 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -46,29 +43,6 @@ func (this CatCmd) Call(inChan chan shellData, outChan chan shellData, arguments
 	close(outChan)
 }
 
-// List the current directory.
-type LsCmd struct {
-}
-
-func (this LsCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
-	if len(arguments) == 0 {
-		arguments = []string{"."}
-	}
-
-	for _, dir := range arguments {
-		files, err := ioutil.ReadDir(dir)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for _, file := range files {
-			outChan <- &shellPath{pathName: file.Name()}
-		}
-	}
-
-	close(outChan)
-}
-
 // Grep the input for an argument to filter by.
 type GrepCmd struct {
 }
@@ -86,19 +60,6 @@ func (this GrepCmd) Call(inChan chan shellData, outChan chan shellData, argument
 		}
 	}
 
-	close(outChan)
-}
-
-// Change the current working directory.
-type CdCmd struct {
-}
-
-func (this CdCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
-	if len(arguments) == 0 {
-		arguments = []string{os.Getenv("HOME")}
-	}
-
-	os.Chdir(arguments[0])
 	close(outChan)
 }
 
