@@ -32,6 +32,10 @@ func runCommandString(text string) {
 	for idx, cmd := range commands {
 		var commandObject commandObject
 		switch cmd.Command {
+		case "ps":
+			commandObject = PsCmd{}
+		case "kill":
+			commandObject = KillCmd{}
 		case "head":
 			commandObject = HeadCmd{}
 		case "tail":
