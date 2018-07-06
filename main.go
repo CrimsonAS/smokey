@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
@@ -31,7 +30,6 @@ func runCommandString(text string) {
 	close(inChan) // ### not what we should do really
 
 	for idx, cmd := range commands {
-		log.Printf("Calling command %s (%s) %+v %+v", cmd.Command, cmd.Arguments, inChan, outChan)
 		var commandObject commandObject
 		switch cmd.Command {
 		case "head":
