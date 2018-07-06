@@ -34,6 +34,10 @@ func runCommandString(text string) {
 		log.Printf("Calling command %s (%s) %+v %+v", cmd.Command, cmd.Arguments, inChan, outChan)
 		var commandObject commandObject
 		switch cmd.Command {
+		case "head":
+			commandObject = HeadCmd{}
+		case "tail":
+			commandObject = TailCmd{}
 		case "echo":
 			commandObject = EchoCmd{}
 		case "cat":
