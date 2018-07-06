@@ -42,12 +42,16 @@ func runCommandString(text string) {
 			commandObject = EchoCmd{}
 		case "cat":
 			commandObject = CatCmd{}
+		case "lines":
+			commandObject = LinesCmd{}
 		case "last":
 			commandObject = LastCmd{}
 		case "ls":
 			commandObject = LsCmd{}
 		case "cd":
 			commandObject = CdCmd{}
+		case "fetch":
+			commandObject = FetchCmd{}
 		case "grep":
 			commandObject = GrepCmd{}
 		default:

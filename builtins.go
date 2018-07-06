@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,6 +16,22 @@ type EchoCmd struct {
 
 func (this EchoCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
 	outChan <- shellString(strings.Join(arguments, " ") + "\n")
+	close(outChan)
+}
+
+// Split input on \n
+// ### not very generic
+type LinesCmd struct {
+}
+
+func (this LinesCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+	for in := range inChan {
+		dat := in.Data()
+		splitz := bytes.Split(dat, []byte{'\n'})
+		for _, line := range splitz {
+			outChan <- shellString(line)
+		}
+	}
 	close(outChan)
 }
 

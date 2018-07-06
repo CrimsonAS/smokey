@@ -5,20 +5,25 @@ was passing between them than just text?
 
 Some thoughts:
 
-    file://filename.txt | cat
+    ls filename.txt | cat
 
 ... stream a file to cat
 
-    http://google.com | cat
+    fetch http://google.com | cat
 
 ... stream a HTTP GET to cat
 
-    ls | cat
+    ls | grep .txt | cat
 
-ls will produce file objects, and give them to cat
+... cat all files matching .txt
 
 # TODO
 
 * arguments need types like the in/out channels have (for URLs and files)
 * out-of-process communication for regular processes needs to be better
 * out-of-process with typed info somehow (some kind of JSON exchange I guess)
+* How do we resolve the split between stdin and arguments? Imagine:
+    fetch http://google.com | cat
+    web-ls-thing | fetch
+  These should function ideally, but right now it relies on handling stdin and
+  arguments together. That feels awkward.
