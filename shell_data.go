@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"strings"
 )
 
@@ -33,27 +32,6 @@ func (this shellString) Data() shellBuffer {
 
 func (this shellString) Present() string {
 	return fmt.Sprintf("%s\n", this)
-}
-
-// A pathname for a file.
-type shellPath struct {
-	pathName string
-}
-
-func (this *shellPath) Grep(searchable string) bool {
-	return strings.Contains(this.pathName, searchable)
-}
-
-func (this *shellPath) Data() shellBuffer {
-	data, err := ioutil.ReadFile(this.pathName)
-	if err != nil {
-		panic(fmt.Sprintf("Can't read file %s: %s", this.pathName, err))
-	}
-	return shellBuffer(data)
-}
-
-func (this *shellPath) Present() string {
-	return fmt.Sprintf("file://%s\n", this.pathName)
 }
 
 // An arbitrary series of bytes

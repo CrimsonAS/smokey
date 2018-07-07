@@ -89,9 +89,14 @@ var lastOut []shellData
 // Wait for a command to finish, presenting data as it arrives.
 func present(outChan chan shellData) {
 	var newOut []shellData
+	const presentDebug = false
 	for res := range outChan {
 		newOut = append(newOut, res)
-		fmt.Printf("%T: %s", res, res.Present())
+		if presentDebug {
+			fmt.Printf("%T: %s", res, res.Present())
+		} else {
+			fmt.Printf("%s", res.Present())
+		}
 	}
 	lastOut = newOut
 }
