@@ -43,9 +43,10 @@ func (this FetchCmd) Call(inChan chan shellData, outChan chan shellData, argumen
 	}
 
 	for _, uri := range arguments {
-		// Kind of artificial limitation. Need a factory function?
+		// Kind of artificial limitation. Should not modify another scheme...
+		// Handle this better ###
 		if !strings.HasPrefix(uri, "https://") && !strings.HasPrefix(uri, "http://") {
-			panic(fmt.Sprintf("URI %s not supported", uri))
+			uri = "https://" + uri
 		}
 		outChan <- &shellUri{uri}
 	}
