@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -48,7 +47,6 @@ func (this FetchCmd) Call(inChan chan shellData, outChan chan shellData, argumen
 		if !strings.HasPrefix(uri, "https://") && !strings.HasPrefix(uri, "http://") {
 			panic(fmt.Sprintf("URI %s not supported", uri))
 		}
-		log.Printf("Creating shellUri for %s", uri)
 		outChan <- &shellUri{uri}
 	}
 
