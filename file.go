@@ -50,14 +50,23 @@ func (this LsCmd) Call(inChan chan shellData, outChan chan shellData, arguments 
 		arguments = []string{"."}
 	}
 
-	for _, dir := range arguments {
-		files, err := ioutil.ReadDir(dir)
+	for _, path := range arguments {
+		finfo, err := os.Stat(path)
 		if err != nil {
-			panic(fmt.Sprintf("Can't read directory %s: %s", dir, err))
+			panic(fmt.Sprintf("Can't stat path %s: %s", path, err))
 		}
 
-		for _, file := range files {
-			outChan <- &shellPath{pathName: file.Name()}
+		if finfo.Mode().IsDir() {
+			files, err := ioutil.ReadDir(path)
+			if err != nil {
+				panic(fmt.Sprintf("Can't read directory %s: %s", path, err))
+			}
+
+			for _, file := range files {
+				outChan <- &shellPath{pathName: file.Name()}
+			}
+		} else {
+			outChan <- &shellPath{pathName: path}
 		}
 	}
 
