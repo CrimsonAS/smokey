@@ -17,7 +17,7 @@ func (this *shellUri) Grep(searchable string) bool {
 }
 
 func (this *shellUri) Data() shellBuffer {
-	resp, err := http.Get("http://example.com/")
+	resp, err := http.Get(this.uri)
 	if err != nil {
 		panic(fmt.Sprintf("Can't read URI %s: %s", this.uri, err))
 	}
