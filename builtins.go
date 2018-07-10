@@ -32,9 +32,43 @@ func (this LinesCmd) Call(inChan chan shellData, outChan chan shellData, argumen
 	close(outChan)
 }
 
-// Send the data of everything from inChan to outChan.
-type CatCmd struct {
+// Duplicate each input to output.
+type DupCmd struct {
 }
+
+func (this DupCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+	for in := range inChan {
+		outChan <- in
+		outChan <- in
+	}
+
+	close(outChan)
+}
+
+// Remove duplicates from input, write the ordered (but unique) inputs to output.
+type UniqCmd struct {
+}
+
+func (this UniqCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+	dat := make(map[interface{}]shellData, 1024)
+	orderedDat := make([]shellData, 0, 1024)
+
+	for in := range inChan {
+		_, ok := dat[in]
+		if !ok {
+			dat[in] = in
+			orderedDat = append(orderedDat, in)
+		}
+	}
+
+	for _, out := range orderedDat {
+		outChan <- out
+	}
+	close(outChan)
+}
+
+// Send the data of everything from inChan to outChan.
+type CatCmd struct{}
 
 func (this CatCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
 	for in := range inChan {
@@ -44,8 +78,7 @@ func (this CatCmd) Call(inChan chan shellData, outChan chan shellData, arguments
 }
 
 // Grep the input for an argument to filter by.
-type GrepCmd struct {
-}
+type GrepCmd struct{}
 
 func (this GrepCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
 	if len(arguments) == 0 {

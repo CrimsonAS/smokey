@@ -44,6 +44,10 @@ func runCommandString(text string) {
 			commandObject = EchoCmd{}
 		case "cat":
 			commandObject = CatCmd{}
+		case "dup":
+			commandObject = DupCmd{}
+		case "uniq":
+			commandObject = UniqCmd{}
 		case "lines":
 			commandObject = LinesCmd{}
 		case "last":
