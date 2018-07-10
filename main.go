@@ -68,6 +68,8 @@ func runCommandString(text string) {
 			commandObject = FetchCmd{}
 		case "grep":
 			commandObject = GrepCmd{}
+		case "pp":
+			commandObject = PpCmd{}
 		default:
 			commandObject = StandardProcessCmd{process: cmd.Command}
 		}

@@ -182,3 +182,13 @@ func (this ScCmd) Call(inChan chan shellData, outChan chan shellData, arguments 
 
 	close(outChan)
 }
+
+// Pretty printer.
+type PpCmd struct{}
+
+func (this PpCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+	for in := range inChan {
+		outChan <- shellString(fmt.Sprintf("%+v", in))
+	}
+	close(outChan)
+}
