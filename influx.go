@@ -46,6 +46,14 @@ func (this *influxSeries) Present() string {
 
 type influxRow struct {
 	Values []interface{}
+	colMap map[string]int
+}
+
+func (this *influxRow) SelectProperty(prop string) shellData {
+	if col, ok := this.colMap[prop]; ok {
+		return shellString(fmt.Sprintf("%s", this.Values[col]))
+	}
+	return nil
 }
 
 func (this *influxRow) SelectColumn(col int) shellData {
@@ -122,9 +130,15 @@ func (this InfluxQuery) Call(inChan chan shellData, outChan chan shellData, argu
 					// is Messages of interest?
 				}
 
+				colMap := make(map[string]int)
+				for idx, col := range series.Columns {
+					colMap[col] = idx
+				}
+
 				for _, val := range series.Values {
 					outChan <- &influxRow{
 						Values: val,
+						colMap: colMap,
 					}
 				}
 			}
