@@ -32,6 +32,10 @@ func runCommandString(text string) {
 	for idx, cmd := range commands {
 		var commandObject commandObject
 		switch cmd.Command {
+		case "influxConnect":
+			commandObject = InfluxConnect{}
+		case "influxQuery":
+			commandObject = InfluxQuery{}
 		case "ps":
 			commandObject = PsCmd{}
 		case "kill":
