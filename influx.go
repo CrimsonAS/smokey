@@ -48,6 +48,13 @@ type influxRow struct {
 	Values []interface{}
 }
 
+func (this *influxRow) SelectColumn(col int) shellData {
+	if col >= 0 && col < len(this.Values) {
+		return shellString(fmt.Sprintf("%s", this.Values[col]))
+	}
+	return nil
+}
+
 func (this *influxRow) Grep(searchable string) bool {
 	return strings.Contains(this.Present(), searchable)
 }

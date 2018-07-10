@@ -19,6 +19,14 @@ type shellData interface {
 	Present() string
 }
 
+type listyShellData interface {
+	SelectColumn(col int) shellData
+}
+
+type associativeShellData interface {
+	SelectProperty(property string) shellData
+}
+
 // An arbitrary string
 type shellString string
 

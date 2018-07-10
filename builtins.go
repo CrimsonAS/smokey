@@ -148,3 +148,37 @@ func (this TailCmd) Call(inChan chan shellData, outChan chan shellData, argument
 
 	close(outChan)
 }
+
+// Select a property of input instances that are associative (like a hash or map)
+type SpCmd struct{}
+
+func (this SpCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+	for _, prop := range arguments {
+		for in := range inChan {
+			if asd, ok := in.(associativeShellData); ok {
+				outChan <- asd.SelectProperty(prop)
+			}
+		}
+	}
+
+	close(outChan)
+}
+
+// Select a column of input instances that are list-like (arrays etc)
+type ScCmd struct{}
+
+func (this ScCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+	for _, prop := range arguments {
+		propInt, err := strconv.Atoi(prop)
+		if err != nil {
+			panic(fmt.Sprintf("Can't parse col arg %s: %s", prop, err))
+		}
+		for in := range inChan {
+			if asd, ok := in.(listyShellData); ok {
+				outChan <- asd.SelectColumn(propInt)
+			}
+		}
+	}
+
+	close(outChan)
+}
