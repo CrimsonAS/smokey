@@ -25,11 +25,11 @@ func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
 	var commandObject commandObject
 	switch cmd.Command {
 	case "sc":
-		commandObject = cmds.ScCmd{}
+		commandObject = builtins.ScCmd{}
 	case "sp":
-		commandObject = cmds.SpCmd{}
+		commandObject = builtins.SpCmd{}
 	case "unwrap":
-		commandObject = cmds.UnwrapCmd{}
+		commandObject = builtins.UnwrapCmd{}
 	case "influxConnect":
 		commandObject = influx.InfluxConnect{}
 	case "influxQuery":
@@ -39,19 +39,19 @@ func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
 	case "kill":
 		commandObject = cmds.KillCmd{}
 	case "head":
-		commandObject = cmds.HeadCmd{}
+		commandObject = builtins.HeadCmd{}
 	case "tail":
-		commandObject = cmds.TailCmd{}
+		commandObject = builtins.TailCmd{}
 	case "echo":
-		commandObject = cmds.EchoCmd{}
+		commandObject = builtins.EchoCmd{}
 	case "cat":
-		commandObject = cmds.CatCmd{}
+		commandObject = builtins.CatCmd{}
 	case "dup":
-		commandObject = cmds.DupCmd{}
+		commandObject = builtins.DupCmd{}
 	case "uniq":
-		commandObject = cmds.UniqCmd{}
+		commandObject = builtins.UniqCmd{}
 	case "explode":
-		commandObject = cmds.ExplodeCmd{}
+		commandObject = builtins.ExplodeCmd{}
 	case "last":
 		commandObject = LastCmd{}
 	case "ls":
@@ -61,11 +61,11 @@ func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
 	case "fetch":
 		commandObject = web.FetchCmd{}
 	case "grep":
-		commandObject = cmds.GrepCmd{}
+		commandObject = builtins.GrepCmd{}
 	case "sort":
 		commandObject = builtins.SortCmd{}
 	case "pp":
-		commandObject = cmds.PpCmd{}
+		commandObject = builtins.PpCmd{}
 	default:
 		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 	}
