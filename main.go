@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/CrimsonAS/smokey/cmds"
+	"github.com/CrimsonAS/smokey/cmds/builtins"
 	"github.com/CrimsonAS/smokey/cmds/influx"
 	"github.com/CrimsonAS/smokey/cmds/web"
 	"github.com/CrimsonAS/smokey/lib"
@@ -74,6 +75,8 @@ func runCommandString(text string) {
 			commandObject = web.FetchCmd{}
 		case "grep":
 			commandObject = cmds.GrepCmd{}
+		case "sort":
+			commandObject = builtins.SortCmd{}
 		case "pp":
 			commandObject = cmds.PpCmd{}
 		default:
