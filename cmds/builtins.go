@@ -1,7 +1,6 @@
 package cmds
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/CrimsonAS/smokey/lib"
 	"strconv"
@@ -17,17 +16,17 @@ func (this EchoCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, 
 	close(outChan)
 }
 
-// Split input on \n
-// ### not very generic
-type LinesCmd struct {
+type ExplodeCmd struct {
 }
 
-func (this LinesCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this ExplodeCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for in := range inChan {
-		dat := in.Data()
-		splitz := bytes.Split(dat, []byte{'\n'})
-		for _, line := range splitz {
-			outChan <- lib.ShellString(line)
+		if explodable, ok := in.(lib.ExplodableData); ok {
+			for _, new := range explodable.Explode() {
+				outChan <- new
+			}
+		} else {
+			outChan <- in
 		}
 	}
 	close(outChan)

@@ -60,8 +60,8 @@ func runCommandString(text string) {
 			commandObject = cmds.DupCmd{}
 		case "uniq":
 			commandObject = cmds.UniqCmd{}
-		case "lines":
-			commandObject = cmds.LinesCmd{}
+		case "explode":
+			commandObject = cmds.ExplodeCmd{}
 		case "last":
 			commandObject = LastCmd{}
 		case "ls":

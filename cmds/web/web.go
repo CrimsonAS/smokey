@@ -31,6 +31,10 @@ func (this *shellUri) Data() lib.ShellBuffer {
 	return lib.ShellBuffer(body)
 }
 
+func (this *shellUri) Explode() []lib.ShellData {
+	return this.Data().Explode()
+}
+
 func (this *shellUri) Present() string {
 	return fmt.Sprintf("%s\n", this.uri)
 }

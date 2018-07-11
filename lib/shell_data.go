@@ -1,11 +1,5 @@
 package lib
 
-import (
-	"bytes"
-	"fmt"
-	"strings"
-)
-
 // Data passed in a shell pipeline.
 type ShellData interface {
 	// Does this data contain this string?
@@ -19,41 +13,18 @@ type ShellData interface {
 	Present() string
 }
 
+// A type of data that has numeric columns
 type ListyShellData interface {
 	SelectColumn(col int) ShellData
 }
 
+// A type of data that has associative key:value data
 type AssociativeShellData interface {
 	SelectProperty(property string) ShellData
 }
 
-// An arbitrary string
-type ShellString string
-
-func (this ShellString) Grep(searchable string) bool {
-	return strings.Contains(string(this), searchable)
-}
-
-func (this ShellString) Data() ShellBuffer {
-	return ShellBuffer(this)
-}
-
-func (this ShellString) Present() string {
-	return fmt.Sprintf("%s\n", this)
-}
-
-// An arbitrary series of bytes
-type ShellBuffer []byte
-
-func (this ShellBuffer) Grep(searchable string) bool {
-	searchableBytes := []byte(searchable)
-	return bytes.Contains(this, searchableBytes)
-}
-
-func (this ShellBuffer) Data() ShellBuffer {
-	return this
-}
-
-func (this ShellBuffer) Present() string {
-	return fmt.Sprintf("%s\n", this)
+// A type of data that can be turned into multiple pieces of information
+// For instance, a string can be exploded into line strings.
+type ExplodableData interface {
+	Explode() []ShellData
 }
