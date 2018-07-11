@@ -2,7 +2,10 @@ package main
 
 import ()
 
-// A command represents a piece of a pipeline.
+// Any old piece of a pipeline.
+type PipelineNode interface{}
+
+// A command to run in the pipeline
 type Command struct {
 	// The command name to run.
 	Command string
@@ -11,18 +14,20 @@ type Command struct {
 	Arguments []string
 }
 
-type PipelineNode interface{}
-
+// A set union operation (+)
 type UnionNode struct {
 	Left  PipelineNode
 	Right PipelineNode
 }
 
+// A set difference operation (-)
 type DifferenceNode struct {
 	Left  PipelineNode
 	Right PipelineNode
 }
 
+// Parse a given command at the given index of the token stream.
+// Return the command node, and the new position in the token stream.
 func parseCommand(tokens []token, idx int) (PipelineNode, int) {
 	switch tokens[idx].tokenType {
 	case plus_token:
@@ -54,6 +59,9 @@ func parseCommand(tokens []token, idx int) (PipelineNode, int) {
 	return cmd, idx
 }
 
+// Parse a set union operation (+) at the given index in the token stream.
+// The left hand side has already been parsed.
+// Return the union node, and the new position in the token stream.
 func parsePlus(tokens []token, idx int, lhs PipelineNode) (PipelineNode, int) {
 	if tokens[idx].tokenType != plus_token {
 		panic("Unexpected non-plus token")
@@ -68,6 +76,9 @@ func parsePlus(tokens []token, idx int, lhs PipelineNode) (PipelineNode, int) {
 	return UnionNode{Left: lhs, Right: rhs}, idx
 }
 
+// Parse a set difference operation (-) at the given index in the token stream.
+// The left hand side has already been parsed.
+// Return the difference node, and the new position in the token stream.
 func parseMinus(tokens []token, idx int, lhs PipelineNode) (PipelineNode, int) {
 	if tokens[idx].tokenType != minus_token {
 		panic("Unexpected non-minus token")
@@ -82,6 +93,9 @@ func parseMinus(tokens []token, idx int, lhs PipelineNode) (PipelineNode, int) {
 	return DifferenceNode{Left: lhs, Right: rhs}, idx
 }
 
+// Parse a node at the given index in the token stream.
+// Return the node, and the new position in the token stream.
+// Note that this may recurse (e.g. if an operator is found)
 func parseRecursively(tokens []token, idx int) (PipelineNode, int) {
 	ret, idx := parseCommand(tokens, idx)
 
@@ -108,7 +122,7 @@ func parseRecursively(tokens []token, idx int) (PipelineNode, int) {
 	panic("Unreachable")
 }
 
-// Parse a pipeline into a slice of command instances.
+// Parse a string pipeline into a slice of PipelineNodes.
 // For instance, echo foo | cat will turn into two commands: echo (foo), and cat.
 func parsePipeline(cmd string) []PipelineNode {
 	tokens := lex(cmd)
