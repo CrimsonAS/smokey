@@ -58,6 +58,13 @@ func (this *shellPath) Explode() []lib.ShellData {
 	return nil
 }
 
+func (this *shellPath) SelectProperty(prop string) lib.ShellData {
+	if prop == "mtime" {
+		return lib.ShellTime(this.fi.ModTime())
+	}
+	return nil
+}
+
 // Change the current working directory.
 type CdCmd struct {
 }
