@@ -156,7 +156,7 @@ func (this SpCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 	for _, prop := range arguments {
 		for in := range inChan {
 			if asd, ok := in.(lib.AssociativeShellData); ok {
-				outChan <- asd.SelectProperty(prop)
+				outChan <- &lib.WrappedData{RealData: in, FakeData: asd.SelectProperty(prop)}
 			}
 		}
 	}
@@ -175,7 +175,7 @@ func (this ScCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 		}
 		for in := range inChan {
 			if asd, ok := in.(lib.ListyShellData); ok {
-				outChan <- asd.SelectColumn(propInt)
+				outChan <- &lib.WrappedData{RealData: in, FakeData: asd.SelectColumn(propInt)}
 			}
 		}
 	}
