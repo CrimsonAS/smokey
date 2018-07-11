@@ -66,6 +66,8 @@ func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
 		commandObject = builtins.SortCmd{}
 	case "pp":
 		commandObject = builtins.PpCmd{}
+	case "wc":
+		commandObject = builtins.WcCmd{}
 	default:
 		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 	}
