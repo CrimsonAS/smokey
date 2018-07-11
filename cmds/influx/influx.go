@@ -1,7 +1,8 @@
-package main
+package influx
 
 import (
 	"fmt"
+	"github.com/CrimsonAS/smokey/lib"
 	"github.com/influxdata/influxdb/client/v2"
 	"strings"
 )
@@ -17,8 +18,8 @@ func (this *influxConnection) Grep(searchable string) bool {
 	return strings.Contains(this.addr, searchable) || strings.Contains(this.user, searchable)
 }
 
-func (this *influxConnection) Data() shellBuffer {
-	return shellBuffer{}
+func (this *influxConnection) Data() lib.ShellBuffer {
+	return lib.ShellBuffer{}
 }
 
 func (this *influxConnection) Present() string {
@@ -36,8 +37,8 @@ func (this *influxSeries) Grep(searchable string) bool {
 	return false
 }
 
-func (this *influxSeries) Data() shellBuffer {
-	return shellBuffer{}
+func (this *influxSeries) Data() lib.ShellBuffer {
+	return lib.ShellBuffer{}
 }
 
 func (this *influxSeries) Present() string {
@@ -49,16 +50,16 @@ type influxRow struct {
 	colMap map[string]int
 }
 
-func (this *influxRow) SelectProperty(prop string) shellData {
+func (this *influxRow) SelectProperty(prop string) lib.ShellData {
 	if col, ok := this.colMap[prop]; ok {
-		return shellString(fmt.Sprintf("%s", this.Values[col]))
+		return lib.ShellString(fmt.Sprintf("%s", this.Values[col]))
 	}
 	return nil
 }
 
-func (this *influxRow) SelectColumn(col int) shellData {
+func (this *influxRow) SelectColumn(col int) lib.ShellData {
 	if col >= 0 && col < len(this.Values) {
-		return shellString(fmt.Sprintf("%s", this.Values[col]))
+		return lib.ShellString(fmt.Sprintf("%s", this.Values[col]))
 	}
 	return nil
 }
@@ -67,8 +68,8 @@ func (this *influxRow) Grep(searchable string) bool {
 	return strings.Contains(this.Present(), searchable)
 }
 
-func (this *influxRow) Data() shellBuffer {
-	return shellBuffer{}
+func (this *influxRow) Data() lib.ShellBuffer {
+	return lib.ShellBuffer{}
 }
 
 func (this *influxRow) Present() string {
@@ -78,7 +79,7 @@ func (this *influxRow) Present() string {
 // Create an influx connection
 type InfluxConnect struct{}
 
-func (this InfluxConnect) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this InfluxConnect) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) < 3 {
 		panic("What do you want to connect to?")
 	}
@@ -94,7 +95,7 @@ func (this InfluxConnect) Call(inChan chan shellData, outChan chan shellData, ar
 // Execute an Influx query on every provided connection
 type InfluxQuery struct{}
 
-func (this InfluxQuery) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this InfluxQuery) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) < 3 {
 		panic("What do you want to query?")
 	}

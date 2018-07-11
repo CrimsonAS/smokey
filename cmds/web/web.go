@@ -1,7 +1,8 @@
-package main
+package web
 
 import (
 	"fmt"
+	"github.com/CrimsonAS/smokey/lib"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -16,7 +17,7 @@ func (this *shellUri) Grep(searchable string) bool {
 	return strings.Contains(this.uri, searchable)
 }
 
-func (this *shellUri) Data() shellBuffer {
+func (this *shellUri) Data() lib.ShellBuffer {
 	resp, err := http.Get(this.uri)
 	if err != nil {
 		panic(fmt.Sprintf("Can't read URI %s: %s", this.uri, err))
@@ -27,7 +28,7 @@ func (this *shellUri) Data() shellBuffer {
 		panic(fmt.Sprintf("Can't read URI body %s: %s", this.uri, err))
 	}
 
-	return shellBuffer(body)
+	return lib.ShellBuffer(body)
 }
 
 func (this *shellUri) Present() string {
@@ -37,7 +38,7 @@ func (this *shellUri) Present() string {
 // Turn arguments into URI
 type FetchCmd struct{}
 
-func (this FetchCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this FetchCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) == 0 {
 		panic("What do you want to fetch?")
 	}

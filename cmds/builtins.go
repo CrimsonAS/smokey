@@ -1,8 +1,9 @@
-package main
+package cmds
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/CrimsonAS/smokey/lib"
 	"strconv"
 	"strings"
 )
@@ -11,8 +12,8 @@ import (
 type EchoCmd struct {
 }
 
-func (this EchoCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
-	outChan <- shellString(strings.Join(arguments, " ") + "\n")
+func (this EchoCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+	outChan <- lib.ShellString(strings.Join(arguments, " ") + "\n")
 	close(outChan)
 }
 
@@ -21,12 +22,12 @@ func (this EchoCmd) Call(inChan chan shellData, outChan chan shellData, argument
 type LinesCmd struct {
 }
 
-func (this LinesCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this LinesCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for in := range inChan {
 		dat := in.Data()
 		splitz := bytes.Split(dat, []byte{'\n'})
 		for _, line := range splitz {
-			outChan <- shellString(line)
+			outChan <- lib.ShellString(line)
 		}
 	}
 	close(outChan)
@@ -36,7 +37,7 @@ func (this LinesCmd) Call(inChan chan shellData, outChan chan shellData, argumen
 type DupCmd struct {
 }
 
-func (this DupCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this DupCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for in := range inChan {
 		outChan <- in
 		outChan <- in
@@ -49,9 +50,9 @@ func (this DupCmd) Call(inChan chan shellData, outChan chan shellData, arguments
 type UniqCmd struct {
 }
 
-func (this UniqCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
-	dat := make(map[interface{}]shellData, 1024)
-	orderedDat := make([]shellData, 0, 1024)
+func (this UniqCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+	dat := make(map[interface{}]lib.ShellData, 1024)
+	orderedDat := make([]lib.ShellData, 0, 1024)
 
 	for in := range inChan {
 		_, ok := dat[in]
@@ -70,7 +71,7 @@ func (this UniqCmd) Call(inChan chan shellData, outChan chan shellData, argument
 // Send the data of everything from inChan to outChan.
 type CatCmd struct{}
 
-func (this CatCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this CatCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for in := range inChan {
 		outChan <- in.Data()
 	}
@@ -80,7 +81,7 @@ func (this CatCmd) Call(inChan chan shellData, outChan chan shellData, arguments
 // Grep the input for an argument to filter by.
 type GrepCmd struct{}
 
-func (this GrepCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this GrepCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) == 0 {
 		panic("no argument to grep")
 	}
@@ -99,7 +100,7 @@ func (this GrepCmd) Call(inChan chan shellData, outChan chan shellData, argument
 // Pass the top n pieces of input
 type HeadCmd struct{}
 
-func (this HeadCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this HeadCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) == 0 {
 		panic("How much do you want?")
 	}
@@ -124,7 +125,7 @@ func (this HeadCmd) Call(inChan chan shellData, outChan chan shellData, argument
 // Pass the last n pieces of input
 type TailCmd struct{}
 
-func (this TailCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this TailCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) == 0 {
 		panic("How much do you want?")
 	}
@@ -133,7 +134,7 @@ func (this TailCmd) Call(inChan chan shellData, outChan chan shellData, argument
 	if err != nil {
 		panic(fmt.Sprintf("Can't parse head arg %s: %s", arguments[0], err))
 	}
-	last := make([]shellData, 0, inputLines)
+	last := make([]lib.ShellData, 0, inputLines)
 
 	for in := range inChan {
 		last = append(last, in)
@@ -152,10 +153,10 @@ func (this TailCmd) Call(inChan chan shellData, outChan chan shellData, argument
 // Select a property of input instances that are associative (like a hash or map)
 type SpCmd struct{}
 
-func (this SpCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this SpCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for _, prop := range arguments {
 		for in := range inChan {
-			if asd, ok := in.(associativeShellData); ok {
+			if asd, ok := in.(lib.AssociativeShellData); ok {
 				outChan <- asd.SelectProperty(prop)
 			}
 		}
@@ -167,14 +168,14 @@ func (this SpCmd) Call(inChan chan shellData, outChan chan shellData, arguments 
 // Select a column of input instances that are list-like (arrays etc)
 type ScCmd struct{}
 
-func (this ScCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this ScCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for _, prop := range arguments {
 		propInt, err := strconv.Atoi(prop)
 		if err != nil {
 			panic(fmt.Sprintf("Can't parse col arg %s: %s", prop, err))
 		}
 		for in := range inChan {
-			if asd, ok := in.(listyShellData); ok {
+			if asd, ok := in.(lib.ListyShellData); ok {
 				outChan <- asd.SelectColumn(propInt)
 			}
 		}
@@ -186,9 +187,9 @@ func (this ScCmd) Call(inChan chan shellData, outChan chan shellData, arguments 
 // Pretty printer.
 type PpCmd struct{}
 
-func (this PpCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this PpCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for in := range inChan {
-		outChan <- shellString(fmt.Sprintf("%+v", in))
+		outChan <- lib.ShellString(fmt.Sprintf("%+v", in))
 	}
 	close(outChan)
 }

@@ -1,8 +1,9 @@
-package main
+package cmds
 
 import (
 	"bufio"
 	"fmt"
+	"github.com/CrimsonAS/smokey/lib"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,11 +13,11 @@ import (
 // A command wrapping an OS process (and its stdin/stdout/stderr).
 type StandardProcessCmd struct {
 	// The process path to run.
-	process string
+	Process string
 }
 
-func (this StandardProcessCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
-	cmd := exec.Command(this.process, arguments...)
+func (this StandardProcessCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+	cmd := exec.Command(this.Process, arguments...)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't get stderr pipe: %s", err))
@@ -53,7 +54,7 @@ func (this StandardProcessCmd) Call(inChan chan shellData, outChan chan shellDat
 			if err != nil {
 				panic(fmt.Sprintf("stdout read failed: %s", err))
 			}
-			outChan <- shellBuffer(stdBuf)
+			outChan <- lib.ShellBuffer(stdBuf)
 		}
 	}()
 

@@ -1,7 +1,8 @@
-package main
+package cmds
 
 import (
 	"fmt"
+	"github.com/CrimsonAS/smokey/lib"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -16,12 +17,12 @@ func (this *shellPath) Grep(searchable string) bool {
 	return strings.Contains(this.pathName, searchable)
 }
 
-func (this *shellPath) Data() shellBuffer {
+func (this *shellPath) Data() lib.ShellBuffer {
 	data, err := ioutil.ReadFile(this.pathName)
 	if err != nil {
 		panic(fmt.Sprintf("Can't read file %s: %s", this.pathName, err))
 	}
-	return shellBuffer(data)
+	return lib.ShellBuffer(data)
 }
 
 func (this *shellPath) Present() string {
@@ -32,7 +33,7 @@ func (this *shellPath) Present() string {
 type CdCmd struct {
 }
 
-func (this CdCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this CdCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) == 0 {
 		arguments = []string{os.Getenv("HOME")}
 	}
@@ -45,7 +46,7 @@ func (this CdCmd) Call(inChan chan shellData, outChan chan shellData, arguments 
 type LsCmd struct {
 }
 
-func (this LsCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this LsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	if len(arguments) == 0 {
 		arguments = []string{"."}
 	}

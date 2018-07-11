@@ -1,7 +1,8 @@
-package main
+package cmds
 
 import (
 	"fmt"
+	"github.com/CrimsonAS/smokey/lib"
 	"github.com/shirou/gopsutil/process"
 	"strings"
 	"syscall"
@@ -16,8 +17,8 @@ func (this *shellProcess) Grep(searchable string) bool {
 	return strings.Contains(this.Present(), searchable)
 }
 
-func (this *shellProcess) Data() shellBuffer {
-	return shellBuffer("")
+func (this *shellProcess) Data() lib.ShellBuffer {
+	return lib.ShellBuffer("")
 }
 
 func (this *shellProcess) Present() string {
@@ -35,7 +36,7 @@ func (this *shellProcess) Present() string {
 // Turn arguments into URI
 type PsCmd struct{}
 
-func (this PsCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this PsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	pidList, err := process.Pids()
 	if err != nil {
 		panic(fmt.Sprintf("Can't fetch PIDs: %s", err))
@@ -51,7 +52,7 @@ func (this PsCmd) Call(inChan chan shellData, outChan chan shellData, arguments 
 // Kill a process
 type KillCmd struct{}
 
-func (this KillCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this KillCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for pid := range inChan {
 		proc := pid.(*shellProcess)
 		syscall.Kill(int(proc.pid), syscall.SIGTERM)

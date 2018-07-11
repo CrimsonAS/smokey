@@ -3,6 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/CrimsonAS/smokey/cmds"
+	"github.com/CrimsonAS/smokey/cmds/influx"
+	"github.com/CrimsonAS/smokey/cmds/web"
+	"github.com/CrimsonAS/smokey/lib"
 	"os"
 	"strings"
 )
@@ -11,7 +15,7 @@ import (
 type commandObject interface {
 	// Call the comand. The inChan and outChan are used for communication.
 	// The arguments let it customize its behaviour from the command line.
-	Call(inChan chan shellData, outChan chan shellData, arguments []string)
+	Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string)
 }
 
 // Parse and execute a given command pipeline.
@@ -22,62 +26,62 @@ func runCommandString(text string) {
 		}
 	}()
 	commands := parsePipeline(text)
-	var inChan chan shellData
-	var outChan chan shellData
+	var inChan chan lib.ShellData
+	var outChan chan lib.ShellData
 
-	inChan = make(chan shellData)
-	outChan = make(chan shellData)
+	inChan = make(chan lib.ShellData)
+	outChan = make(chan lib.ShellData)
 	close(inChan) // ### not what we should do really
 
 	for idx, cmd := range commands {
 		var commandObject commandObject
 		switch cmd.Command {
 		case "sc":
-			commandObject = ScCmd{}
+			commandObject = cmds.ScCmd{}
 		case "sp":
-			commandObject = SpCmd{}
+			commandObject = cmds.SpCmd{}
 		case "influxConnect":
-			commandObject = InfluxConnect{}
+			commandObject = influx.InfluxConnect{}
 		case "influxQuery":
-			commandObject = InfluxQuery{}
+			commandObject = influx.InfluxQuery{}
 		case "ps":
-			commandObject = PsCmd{}
+			commandObject = cmds.PsCmd{}
 		case "kill":
-			commandObject = KillCmd{}
+			commandObject = cmds.KillCmd{}
 		case "head":
-			commandObject = HeadCmd{}
+			commandObject = cmds.HeadCmd{}
 		case "tail":
-			commandObject = TailCmd{}
+			commandObject = cmds.TailCmd{}
 		case "echo":
-			commandObject = EchoCmd{}
+			commandObject = cmds.EchoCmd{}
 		case "cat":
-			commandObject = CatCmd{}
+			commandObject = cmds.CatCmd{}
 		case "dup":
-			commandObject = DupCmd{}
+			commandObject = cmds.DupCmd{}
 		case "uniq":
-			commandObject = UniqCmd{}
+			commandObject = cmds.UniqCmd{}
 		case "lines":
-			commandObject = LinesCmd{}
+			commandObject = cmds.LinesCmd{}
 		case "last":
 			commandObject = LastCmd{}
 		case "ls":
-			commandObject = LsCmd{}
+			commandObject = cmds.LsCmd{}
 		case "cd":
-			commandObject = CdCmd{}
+			commandObject = cmds.CdCmd{}
 		case "fetch":
-			commandObject = FetchCmd{}
+			commandObject = web.FetchCmd{}
 		case "grep":
-			commandObject = GrepCmd{}
+			commandObject = cmds.GrepCmd{}
 		case "pp":
-			commandObject = PpCmd{}
+			commandObject = cmds.PpCmd{}
 		default:
-			commandObject = StandardProcessCmd{process: cmd.Command}
+			commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 		}
 		go commandObject.Call(inChan, outChan, cmd.Arguments)
 
 		inChan = outChan
 		if idx < len(commands)-1 {
-			outChan = make(chan shellData)
+			outChan = make(chan lib.ShellData)
 		}
 	}
 
@@ -90,7 +94,7 @@ func runCommandString(text string) {
 type LastCmd struct {
 }
 
-func (this LastCmd) Call(inChan chan shellData, outChan chan shellData, arguments []string) {
+func (this LastCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
 	for _, last := range lastOut {
 		outChan <- last
 	}
@@ -98,11 +102,11 @@ func (this LastCmd) Call(inChan chan shellData, outChan chan shellData, argument
 }
 
 // ### used by last command. ideally, it would somehow keep hold of this itself
-var lastOut []shellData
+var lastOut []lib.ShellData
 
 // Wait for a command to finish, presenting data as it arrives.
-func present(outChan chan shellData) {
-	var newOut []shellData
+func present(outChan chan lib.ShellData) {
+	var newOut []lib.ShellData
 	const presentDebug = false
 	for res := range outChan {
 		newOut = append(newOut, res)
