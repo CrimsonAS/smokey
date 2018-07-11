@@ -40,6 +40,8 @@ func runCommandString(text string) {
 			commandObject = cmds.ScCmd{}
 		case "sp":
 			commandObject = cmds.SpCmd{}
+		case "unwrap":
+			commandObject = cmds.UnwrapCmd{}
 		case "influxConnect":
 			commandObject = influx.InfluxConnect{}
 		case "influxQuery":

@@ -183,6 +183,20 @@ func (this ScCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 	close(outChan)
 }
 
+// Unwrap a WrappedData
+type UnwrapCmd struct{}
+
+func (this UnwrapCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+	for in := range inChan {
+		if wd, ok := in.(*lib.WrappedData); ok {
+			outChan <- wd.RealData
+		} else {
+			outChan <- in
+		}
+	}
+	close(outChan)
+}
+
 // Pretty printer.
 type PpCmd struct{}
 
