@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/CrimsonAS/smokey/lib"
 	"github.com/influxdata/influxdb/client/v2"
-	"strings"
 )
 
 // A URI representing an influx connection
@@ -12,10 +11,6 @@ type influxConnection struct {
 	addr string
 	user string
 	pass string
-}
-
-func (this *influxConnection) Grep(searchable string) bool {
-	return strings.Contains(this.addr, searchable) || strings.Contains(this.user, searchable)
 }
 
 func (this *influxConnection) Data() lib.ShellBuffer {
@@ -31,10 +26,6 @@ type influxSeries struct {
 	Tags    map[string]string
 	Columns []string
 	Partial bool
-}
-
-func (this *influxSeries) Grep(searchable string) bool {
-	return false
 }
 
 func (this *influxSeries) Data() lib.ShellBuffer {
@@ -62,10 +53,6 @@ func (this *influxRow) SelectColumn(col int) lib.ShellData {
 		return lib.ShellString(fmt.Sprintf("%s", this.Values[col]))
 	}
 	return nil
-}
-
-func (this *influxRow) Grep(searchable string) bool {
-	return strings.Contains(this.Present(), searchable)
 }
 
 func (this *influxRow) Data() lib.ShellBuffer {

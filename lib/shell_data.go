@@ -2,9 +2,6 @@ package lib
 
 // Data passed in a shell pipeline.
 type ShellData interface {
-	// Does this data contain this string?
-	Grep(searchable string) bool
-
 	// Return the underlying data for this shell item
 	// For example, for a file, return the contents
 	Data() ShellBuffer

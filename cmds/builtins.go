@@ -88,7 +88,7 @@ func (this GrepCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, 
 	searchStr := arguments[0]
 
 	for in := range inChan {
-		if in.Grep(searchStr) {
+		if strings.Contains(in.Present(), searchStr) {
 			outChan <- in
 		}
 	}

@@ -13,10 +13,6 @@ type shellUri struct {
 	uri string
 }
 
-func (this *shellUri) Grep(searchable string) bool {
-	return strings.Contains(this.uri, searchable)
-}
-
 func (this *shellUri) Data() lib.ShellBuffer {
 	resp, err := http.Get(this.uri)
 	if err != nil {

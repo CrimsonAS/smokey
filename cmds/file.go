@@ -5,16 +5,11 @@ import (
 	"github.com/CrimsonAS/smokey/lib"
 	"io/ioutil"
 	"os"
-	"strings"
 )
 
 // A pathname for something on disk
 type shellPath struct {
 	pathName string
-}
-
-func (this *shellPath) Grep(searchable string) bool {
-	return strings.Contains(this.pathName, searchable)
 }
 
 func (this *shellPath) Data() lib.ShellBuffer {

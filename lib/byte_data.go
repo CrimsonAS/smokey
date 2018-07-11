@@ -8,11 +8,6 @@ import (
 // An arbitrary series of bytes
 type ShellBuffer []byte
 
-func (this ShellBuffer) Grep(searchable string) bool {
-	searchableBytes := []byte(searchable)
-	return bytes.Contains(this, searchableBytes)
-}
-
 func (this ShellBuffer) Data() ShellBuffer {
 	return this
 }

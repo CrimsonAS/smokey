@@ -8,10 +8,6 @@ import (
 // An arbitrary string
 type ShellString string
 
-func (this ShellString) Grep(searchable string) bool {
-	return strings.Contains(string(this), searchable)
-}
-
 func (this ShellString) Data() ShellBuffer {
 	return ShellBuffer(this)
 }

@@ -4,17 +4,12 @@ import (
 	"fmt"
 	"github.com/CrimsonAS/smokey/lib"
 	"github.com/shirou/gopsutil/process"
-	"strings"
 	"syscall"
 )
 
 // A process object
 type shellProcess struct {
 	pid int32
-}
-
-func (this *shellProcess) Grep(searchable string) bool {
-	return strings.Contains(this.Present(), searchable)
 }
 
 func (this *shellProcess) Data() lib.ShellBuffer {
