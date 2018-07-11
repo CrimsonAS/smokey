@@ -19,6 +19,8 @@ Some thoughts:
 
 # TODO
 
+* actually implement raw terminal mode
+* fix standard process interaction (and make it work for e.g. vim)
 * arguments need types like the in/out channels have (for URLs and files)?
 * out-of-process communication for regular processes needs to be better
 * out-of-process with typed info somehow (some kind of JSON exchange I guess)
