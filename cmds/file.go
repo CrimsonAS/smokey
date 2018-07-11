@@ -7,21 +7,55 @@ import (
 	"os"
 )
 
-// A pathname for something on disk
+// Data representing something on disk.
 type shellPath struct {
-	pathName string
+	rootPath string
+	fi       os.FileInfo
+}
+
+func (this *shellPath) fullPath() string {
+	if this.rootPath != "./." {
+		return fmt.Sprintf("%s/%s", this.rootPath, this.fi.Name())
+	}
+	return this.fi.Name()
+}
+
+func (this *shellPath) isDir() bool {
+	return this.fi.IsDir()
 }
 
 func (this *shellPath) Data() lib.ShellBuffer {
-	data, err := ioutil.ReadFile(this.pathName)
+	path := this.fullPath()
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		panic(fmt.Sprintf("Can't read file %s: %s", this.pathName, err))
+		panic(fmt.Sprintf("Can't read file %s: %s", path, err))
 	}
 	return lib.ShellBuffer(data)
 }
 
 func (this *shellPath) Present() string {
-	return fmt.Sprintf("%s\n", this.pathName)
+	path := this.fullPath()
+	return fmt.Sprintf("%s\n", path)
+}
+
+func (this *shellPath) Explode() []lib.ShellData {
+	if this.isDir() {
+		fp := this.fullPath()
+		files, err := ioutil.ReadDir(fp)
+		if err != nil {
+			panic(fmt.Sprintf("Can't read directory %s: %s", fp, err))
+		}
+
+		ret := make([]lib.ShellData, len(files))
+
+		for idx, fi := range files {
+			ret[idx] = &shellPath{rootPath: fp, fi: fi}
+		}
+
+		return ret
+	}
+
+	return nil
 }
 
 // Change the current working directory.
@@ -51,18 +85,15 @@ func (this LsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 		if err != nil {
 			panic(fmt.Sprintf("Can't stat path %s: %s", path, err))
 		}
+		sp := &shellPath{rootPath: path, fi: finfo}
+		if sp.isDir() {
+			contents := sp.Explode()
 
-		if finfo.Mode().IsDir() {
-			files, err := ioutil.ReadDir(path)
-			if err != nil {
-				panic(fmt.Sprintf("Can't read directory %s: %s", path, err))
-			}
-
-			for _, file := range files {
-				outChan <- &shellPath{pathName: file.Name()}
+			for _, file := range contents {
+				outChan <- file
 			}
 		} else {
-			outChan <- &shellPath{pathName: path}
+			outChan <- sp
 		}
 	}
 
