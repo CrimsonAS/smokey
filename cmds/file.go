@@ -34,7 +34,7 @@ func (this *shellPath) Data() lib.ShellBuffer {
 }
 
 func (this *shellPath) Present() string {
-	path := this.fullPath()
+	path := this.fullPath() // ### unfortunate this prints an absolute path if it's in CWD...
 	return fmt.Sprintf("%s\n", path)
 }
 
@@ -87,12 +87,18 @@ func (this LsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 		arguments = []string{"."}
 	}
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Sprintf("Can't find current directory: %s", err))
+	}
+
 	for _, path := range arguments {
-		finfo, err := os.Stat(path)
+		finfo, err := os.Stat("./" + path)
 		if err != nil {
 			panic(fmt.Sprintf("Can't stat path %s: %s", path, err))
 		}
-		sp := &shellPath{rootPath: path, fi: finfo}
+
+		sp := &shellPath{rootPath: cwd, fi: finfo}
 		if sp.isDir() {
 			contents := sp.Explode()
 
