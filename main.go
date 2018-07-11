@@ -9,7 +9,9 @@ import (
 	"github.com/CrimsonAS/smokey/cmds/web"
 	"github.com/CrimsonAS/smokey/lib"
 	"os"
+	"reflect"
 	"strings"
+	"sync"
 )
 
 // All commands implement this interface.
@@ -19,78 +21,173 @@ type commandObject interface {
 	Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string)
 }
 
+func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
+	var commandObject commandObject
+	switch cmd.Command {
+	case "sc":
+		commandObject = cmds.ScCmd{}
+	case "sp":
+		commandObject = cmds.SpCmd{}
+	case "unwrap":
+		commandObject = cmds.UnwrapCmd{}
+	case "influxConnect":
+		commandObject = influx.InfluxConnect{}
+	case "influxQuery":
+		commandObject = influx.InfluxQuery{}
+	case "ps":
+		commandObject = cmds.PsCmd{}
+	case "kill":
+		commandObject = cmds.KillCmd{}
+	case "head":
+		commandObject = cmds.HeadCmd{}
+	case "tail":
+		commandObject = cmds.TailCmd{}
+	case "echo":
+		commandObject = cmds.EchoCmd{}
+	case "cat":
+		commandObject = cmds.CatCmd{}
+	case "dup":
+		commandObject = cmds.DupCmd{}
+	case "uniq":
+		commandObject = cmds.UniqCmd{}
+	case "explode":
+		commandObject = cmds.ExplodeCmd{}
+	case "last":
+		commandObject = LastCmd{}
+	case "ls":
+		commandObject = cmds.LsCmd{}
+	case "cd":
+		commandObject = cmds.CdCmd{}
+	case "fetch":
+		commandObject = web.FetchCmd{}
+	case "grep":
+		commandObject = cmds.GrepCmd{}
+	case "sort":
+		commandObject = builtins.SortCmd{}
+	case "pp":
+		commandObject = cmds.PpCmd{}
+	default:
+		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
+	}
+	outChan := make(chan lib.ShellData)
+	go commandObject.Call(inChan, outChan, cmd.Arguments)
+	return outChan
+}
+
 // Parse and execute a given command pipeline.
 func runCommandString(text string) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered from panic", r)
-		}
-	}()
-	commands := parsePipeline(text)
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		fmt.Println("Recovered from panic", r)
+	//	}
+	//}()
+	nodes := parsePipeline(text)
 	var inChan chan lib.ShellData
-	var outChan chan lib.ShellData
 
 	inChan = make(chan lib.ShellData)
-	outChan = make(chan lib.ShellData)
 	close(inChan) // ### not what we should do really
 
-	for idx, cmd := range commands {
-		var commandObject commandObject
-		switch cmd.Command {
-		case "sc":
-			commandObject = cmds.ScCmd{}
-		case "sp":
-			commandObject = cmds.SpCmd{}
-		case "unwrap":
-			commandObject = cmds.UnwrapCmd{}
-		case "influxConnect":
-			commandObject = influx.InfluxConnect{}
-		case "influxQuery":
-			commandObject = influx.InfluxQuery{}
-		case "ps":
-			commandObject = cmds.PsCmd{}
-		case "kill":
-			commandObject = cmds.KillCmd{}
-		case "head":
-			commandObject = cmds.HeadCmd{}
-		case "tail":
-			commandObject = cmds.TailCmd{}
-		case "echo":
-			commandObject = cmds.EchoCmd{}
-		case "cat":
-			commandObject = cmds.CatCmd{}
-		case "dup":
-			commandObject = cmds.DupCmd{}
-		case "uniq":
-			commandObject = cmds.UniqCmd{}
-		case "explode":
-			commandObject = cmds.ExplodeCmd{}
-		case "last":
-			commandObject = LastCmd{}
-		case "ls":
-			commandObject = cmds.LsCmd{}
-		case "cd":
-			commandObject = cmds.CdCmd{}
-		case "fetch":
-			commandObject = web.FetchCmd{}
-		case "grep":
-			commandObject = cmds.GrepCmd{}
-		case "sort":
-			commandObject = builtins.SortCmd{}
-		case "pp":
-			commandObject = cmds.PpCmd{}
-		default:
-			commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
-		}
-		go commandObject.Call(inChan, outChan, cmd.Arguments)
-
-		inChan = outChan
-		if idx < len(commands)-1 {
-			outChan = make(chan lib.ShellData)
-		}
+	for _, node := range nodes {
+		//log.Printf("Running node %+v", node)
+		inChan = runNode(inChan, node)
+		//log.Printf("Done running node %+v", node)
 	}
 
-	present(outChan)
+	present(inChan)
+}
+
+func runUnion(node UnionNode, inChan chan lib.ShellData) chan lib.ShellData {
+	leftOutChan := runNode(inChan, node.Left)
+	rightOutChan := runNode(inChan, node.Right)
+	unionChan := make(chan lib.ShellData)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	pipeChan := func(readFrom, writeTo chan lib.ShellData) {
+		for in := range readFrom {
+			writeTo <- in
+		}
+		wg.Done()
+	}
+
+	go pipeChan(leftOutChan, unionChan)
+	go pipeChan(rightOutChan, unionChan)
+
+	// In the normal command pipeline case, the command is expected to close
+	// its output once it is finished writing. However, an operator node is
+	// not quite using that path. In this case, we have two channels (for
+	// lhs and rhs), and both will close normally. The union channel,
+	// though, we have to close _ourselves_.
+	//
+	// To do this in a way that won't block further processing of the
+	// pipeline, we use a WaitGroup plus an asynchronous goroutine below.
+	go func() {
+		wg.Wait()
+		close(unionChan)
+	}()
+
+	return unionChan
+}
+
+func runDifference(node DifferenceNode, inChan chan lib.ShellData) chan lib.ShellData {
+	leftOutChan := runNode(inChan, node.Left)
+	rightOutChan := runNode(inChan, node.Right)
+
+	leftData := []lib.ShellData{}
+	rightData := []lib.ShellData{}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	pipeChan := func(outChan chan lib.ShellData, data *[]lib.ShellData) {
+		for newData := range outChan {
+			*data = append(*data, newData)
+		}
+		wg.Done()
+	}
+
+	go pipeChan(leftOutChan, &leftData)
+	go pipeChan(rightOutChan, &rightData)
+
+	// We can't do this asynchronously, because we can't produce data until we
+	// have lhs and rhs data.
+	wg.Wait()
+
+	// But we must stream our data out asynchronously.
+	differenceChan := make(chan lib.ShellData)
+	go func() {
+		// ### this is O(n^n) and it really shouldn't be.
+		for _, left := range leftData {
+			found := false
+			for _, right := range rightData {
+				if reflect.DeepEqual(left, right) {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				differenceChan <- left
+			}
+		}
+		close(differenceChan)
+	}()
+
+	return differenceChan
+}
+
+func runNode(inChan chan lib.ShellData, node PipelineNode) chan lib.ShellData {
+	switch typedNode := node.(type) {
+	case Command:
+		return runCommand(typedNode, inChan)
+	case UnionNode:
+		return runUnion(typedNode, inChan)
+	case DifferenceNode:
+		return runDifference(typedNode, inChan)
+	default:
+		panic("Unsupported node")
+	}
 }
 
 // LastCmd just repeats whatever shell data the last command pipeline produced.
