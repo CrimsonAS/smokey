@@ -38,31 +38,40 @@ func lex(cmd string) []token {
 		}
 	}
 
+	escapeNext := false
+
 	for _, c := range cmd {
-		switch c {
-		case '"':
-			if readingLiteral {
-				tokens = append(tokens, token{tokenType: string_literal_token, tokenValue: literal})
-			}
-			readingLiteral = !readingLiteral
-			literal = ""
-		case '+':
-			endLiteral()
-			tokens = append(tokens, token{tokenType: plus_token})
-		case '-':
-			endLiteral()
-			tokens = append(tokens, token{tokenType: minus_token})
-		case '|':
-			endLiteral()
-			tokens = append(tokens, token{tokenType: pipe_token})
-		case ' ':
-			if readingLiteral {
-				literal += string(c)
-			} else {
-				endLiteral()
-			}
-		default:
+		if escapeNext {
 			literal += string(c)
+			escapeNext = false
+		} else {
+			switch c {
+			case '\\':
+				escapeNext = true
+			case '"':
+				if readingLiteral {
+					tokens = append(tokens, token{tokenType: string_literal_token, tokenValue: literal})
+				}
+				readingLiteral = !readingLiteral
+				literal = ""
+			case '+':
+				endLiteral()
+				tokens = append(tokens, token{tokenType: plus_token})
+			case '-':
+				endLiteral()
+				tokens = append(tokens, token{tokenType: minus_token})
+			case '|':
+				endLiteral()
+				tokens = append(tokens, token{tokenType: pipe_token})
+			case ' ':
+				if readingLiteral {
+					literal += string(c)
+				} else {
+					endLiteral()
+				}
+			default:
+				literal += string(c)
+			}
 		}
 	}
 
