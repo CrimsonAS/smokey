@@ -13,7 +13,7 @@ type shellProcess struct {
 }
 
 func (this *shellProcess) Data() lib.ShellBuffer {
-	return lib.ShellBuffer("")
+	return lib.ShellBuffer(this.Present())
 }
 
 func (this *shellProcess) Present() string {
