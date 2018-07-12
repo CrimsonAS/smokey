@@ -9,10 +9,10 @@ import (
 type MaxCmd struct {
 }
 
-func (this MaxCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this MaxCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	max := lib.ShellInt(math.MinInt64)
 	maxFound := false
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if num, ok := in.(lib.ShellInt); ok {
 			if num >= max {
 				max = num
@@ -21,9 +21,9 @@ func (this MaxCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, a
 		}
 	}
 	if maxFound {
-		outChan <- lib.ShellInt(max)
+		outChan.Write(lib.ShellInt(max))
 	} else {
-		outChan <- lib.ShellInt(math.MaxInt64)
+		outChan.Write(lib.ShellInt(math.MaxInt64))
 	}
-	close(outChan)
+	outChan.Close()
 }

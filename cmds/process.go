@@ -31,26 +31,26 @@ func (this *shellProcess) Present() string {
 // Turn arguments into URI
 type PsCmd struct{}
 
-func (this PsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this PsCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	pidList, err := process.Pids()
 	if err != nil {
 		panic(fmt.Sprintf("Can't fetch PIDs: %s", err))
 	}
 
 	for _, pid := range pidList {
-		outChan <- &shellProcess{pid: pid}
+		outChan.Write(&shellProcess{pid: pid})
 	}
 
-	close(outChan)
+	outChan.Close()
 }
 
 // Kill a process
 type KillCmd struct{}
 
-func (this KillCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	for pid := range inChan {
-		proc := pid.(*shellProcess)
+func (this KillCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		proc := in.(*shellProcess)
 		syscall.Kill(int(proc.pid), syscall.SIGTERM)
 	}
-	close(outChan)
+	outChan.Close()
 }

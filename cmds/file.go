@@ -69,20 +69,20 @@ func (this *shellPath) SelectProperty(prop string) lib.ShellData {
 type CdCmd struct {
 }
 
-func (this CdCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this CdCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) == 0 {
 		arguments = []string{os.Getenv("HOME")}
 	}
 
 	os.Chdir(arguments[0])
-	close(outChan)
+	outChan.Close()
 }
 
 // List the current directory.
 type LsCmd struct {
 }
 
-func (this LsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this LsCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) == 0 {
 		arguments = []string{"."}
 	}
@@ -103,12 +103,12 @@ func (this LsCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 			contents := sp.Explode()
 
 			for _, file := range contents {
-				outChan <- file
+				outChan.Write(file)
 			}
 		} else {
-			outChan <- sp
+			outChan.Write(sp)
 		}
 	}
 
-	close(outChan)
+	outChan.Close()
 }

@@ -9,7 +9,7 @@ import (
 type EchoCmd struct {
 }
 
-func (this EchoCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	outChan <- lib.ShellString(strings.Join(arguments, " ") + "\n")
-	close(outChan)
+func (this EchoCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	outChan.Write(lib.ShellString(strings.Join(arguments, " ") + "\n"))
+	outChan.Close()
 }

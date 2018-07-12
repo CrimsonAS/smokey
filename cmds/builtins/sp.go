@@ -7,14 +7,14 @@ import (
 // Select a property of input instances that are associative (like a hash or map)
 type SpCmd struct{}
 
-func (this SpCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this SpCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	for _, prop := range arguments {
-		for in := range inChan {
+		for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 			if asd, ok := in.(lib.AssociativeShellData); ok {
-				outChan <- &lib.WrappedData{RealData: in, FakeData: asd.SelectProperty(prop)}
+				outChan.Write(&lib.WrappedData{RealData: in, FakeData: asd.SelectProperty(prop)})
 			}
 		}
 	}
 
-	close(outChan)
+	outChan.Close()
 }

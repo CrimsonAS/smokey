@@ -8,9 +8,9 @@ import (
 // Pretty printer.
 type PpCmd struct{}
 
-func (this PpCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	for in := range inChan {
-		outChan <- lib.ShellString(fmt.Sprintf("%+v", in))
+func (this PpCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		outChan.Write(lib.ShellString(fmt.Sprintf("%+v", in)))
 	}
-	close(outChan)
+	outChan.Close()
 }

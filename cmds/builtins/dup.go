@@ -8,11 +8,11 @@ import (
 type DupCmd struct {
 }
 
-func (this DupCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	for in := range inChan {
-		outChan <- in
-		outChan <- in
+func (this DupCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		outChan.Write(in)
+		outChan.Write(in)
 	}
 
-	close(outChan)
+	outChan.Close()
 }

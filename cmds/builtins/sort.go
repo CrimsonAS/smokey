@@ -22,15 +22,15 @@ func (this arbitraryShellData) Less(i, j int) bool {
 	return r.Present() < l.Present()
 }
 
-func (this SortCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this SortCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	sortData := arbitraryShellData{}
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		sortData = append(sortData, in)
 	}
 	sort.Sort(sortData)
 
 	for _, out := range sortData {
-		outChan <- out
+		outChan.Write(out)
 	}
-	close(outChan)
+	outChan.Close()
 }

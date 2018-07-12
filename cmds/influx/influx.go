@@ -66,29 +66,29 @@ func (this *influxRow) Present() string {
 // Create an influx connection
 type InfluxConnect struct{}
 
-func (this InfluxConnect) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this InfluxConnect) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) < 3 {
 		panic("What do you want to connect to?")
 	}
 
-	outChan <- &influxConnection{
+	outChan.Write(&influxConnection{
 		addr: arguments[0],
 		user: arguments[1],
 		pass: arguments[2],
-	}
-	close(outChan)
+	})
+	outChan.Close()
 }
 
 // Execute an Influx query on every provided connection
 type InfluxQuery struct{}
 
-func (this InfluxQuery) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this InfluxQuery) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) < 3 {
 		panic("What do you want to query?")
 	}
 
-	for conn := range inChan {
-		influxConn := conn.(*influxConnection)
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		influxConn := in.(*influxConnection)
 		c, err := client.NewHTTPClient(client.HTTPConfig{
 			Addr:     influxConn.addr,
 			Username: influxConn.user,
@@ -109,14 +109,14 @@ func (this InfluxQuery) Call(inChan chan lib.ShellData, outChan chan lib.ShellDa
 
 		for _, result := range resp.Results {
 			for _, series := range result.Series {
-				outChan <- &influxSeries{
+				outChan.Write(&influxSeries{
 					Name:    series.Name,
 					Tags:    series.Tags,
 					Columns: series.Columns,
 					Partial: series.Partial,
 
 					// is Messages of interest?
-				}
+				})
 
 				colMap := make(map[string]int)
 				for idx, col := range series.Columns {
@@ -124,13 +124,13 @@ func (this InfluxQuery) Call(inChan chan lib.ShellData, outChan chan lib.ShellDa
 				}
 
 				for _, val := range series.Values {
-					outChan <- &influxRow{
+					outChan.Write(&influxRow{
 						Values: val,
 						colMap: colMap,
-					}
+					})
 				}
 			}
 		}
 	}
-	close(outChan)
+	outChan.Close()
 }

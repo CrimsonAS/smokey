@@ -9,10 +9,10 @@ import (
 type MinCmd struct {
 }
 
-func (this MinCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this MinCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	min := lib.ShellInt(math.MaxInt64)
 	minFound := false
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if num, ok := in.(lib.ShellInt); ok {
 			if num <= min {
 				min = num
@@ -21,9 +21,9 @@ func (this MinCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, a
 		}
 	}
 	if minFound {
-		outChan <- lib.ShellInt(min)
+		outChan.Write(lib.ShellInt(min))
 	} else {
-		outChan <- lib.ShellInt(math.MinInt64)
+		outChan.Write(lib.ShellInt(math.MaxInt64))
 	}
-	close(outChan)
+	outChan.Close()
 }

@@ -10,13 +10,13 @@ import (
 type IntCmd struct {
 }
 
-func (this IntCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this IntCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	for _, arg := range arguments {
 		val, err := strconv.Atoi(arg)
 		if err != nil {
 			panic(fmt.Sprintf("Couldn't convert to int: %s (%s)", arg, err))
 		}
-		outChan <- lib.ShellInt(val)
+		outChan.Write(lib.ShellInt(val))
 	}
-	close(outChan)
+	outChan.Close()
 }

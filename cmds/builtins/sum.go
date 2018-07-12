@@ -8,13 +8,13 @@ import (
 type SumCmd struct {
 }
 
-func (this SumCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this SumCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	count := 0
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if num, ok := in.(lib.ShellInt); ok {
 			count += int(num)
 		}
 	}
-	outChan <- lib.ShellInt(count)
-	close(outChan)
+	outChan.Write(lib.ShellInt(count))
+	outChan.Close()
 }

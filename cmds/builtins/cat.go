@@ -7,9 +7,9 @@ import (
 // Send the data of everything from inChan to outChan.
 type CatCmd struct{}
 
-func (this CatCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	for in := range inChan {
-		outChan <- in.Data()
+func (this CatCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		outChan.Write(in.Data())
 	}
-	close(outChan)
+	outChan.Close()
 }

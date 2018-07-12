@@ -9,7 +9,7 @@ import (
 // Pass the last n pieces of input
 type TailCmd struct{}
 
-func (this TailCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this TailCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) == 0 {
 		panic("How much do you want?")
 	}
@@ -20,7 +20,7 @@ func (this TailCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, 
 	}
 	last := make([]lib.ShellData, 0, inputLines)
 
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		last = append(last, in)
 		if len(last) > inputLines {
 			last = last[1:]
@@ -28,8 +28,8 @@ func (this TailCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, 
 	}
 
 	for _, in := range last {
-		outChan <- in
+		outChan.Write(in)
 	}
 
-	close(outChan)
+	outChan.Close()
 }

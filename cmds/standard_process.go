@@ -16,7 +16,7 @@ type StandardProcessCmd struct {
 	Process string
 }
 
-func (this StandardProcessCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this StandardProcessCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	cmd := exec.Command(this.Process, arguments...)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
@@ -54,7 +54,7 @@ func (this StandardProcessCmd) Call(inChan chan lib.ShellData, outChan chan lib.
 			if err != nil {
 				panic(fmt.Sprintf("stdout read failed: %s", err))
 			}
-			outChan <- lib.ShellBuffer(stdBuf)
+			outChan.Write(lib.ShellBuffer(stdBuf))
 		}
 	}()
 
@@ -62,5 +62,5 @@ func (this StandardProcessCmd) Call(inChan chan lib.ShellData, outChan chan lib.
 		log.Fatal(err)
 	}
 
-	close(outChan)
+	outChan.Close()
 }

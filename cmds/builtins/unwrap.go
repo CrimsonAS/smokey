@@ -7,13 +7,13 @@ import (
 // Unwrap a WrappedData
 type UnwrapCmd struct{}
 
-func (this UnwrapCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	for in := range inChan {
+func (this UnwrapCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if wd, ok := in.(*lib.WrappedData); ok {
-			outChan <- wd.RealData
+			outChan.Write(wd.RealData)
 		} else {
-			outChan <- in
+			outChan.Write(in)
 		}
 	}
-	close(outChan)
+	outChan.Close()
 }

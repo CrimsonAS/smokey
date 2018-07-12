@@ -38,7 +38,7 @@ func (this *shellUri) Present() string {
 // Turn arguments into URI
 type FetchCmd struct{}
 
-func (this FetchCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this FetchCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) == 0 {
 		panic("What do you want to fetch?")
 	}
@@ -49,8 +49,8 @@ func (this FetchCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData,
 		if !strings.HasPrefix(uri, "https://") && !strings.HasPrefix(uri, "http://") {
 			uri = "https://" + uri
 		}
-		outChan <- &shellUri{uri}
+		outChan.Write(&shellUri{uri})
 	}
 
-	close(outChan)
+	outChan.Close()
 }

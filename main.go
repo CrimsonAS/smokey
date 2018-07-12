@@ -14,14 +14,13 @@ import (
 	"sync"
 )
 
-// All commands implement this interface.
 type commandObject interface {
 	// Call the comand. The inChan and outChan are used for communication.
 	// The arguments let it customize its behaviour from the command line.
-	Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string)
+	Call(inChan, outChan *lib.Channel, arguments []string)
 }
 
-func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
+func runCommand(cmd Command, inChan *lib.Channel) *lib.Channel {
 	var commandObject commandObject
 	switch cmd.Command {
 	case "sc":
@@ -79,7 +78,7 @@ func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
 	default:
 		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 	}
-	outChan := make(chan lib.ShellData)
+	outChan := lib.NewChannel()
 	go commandObject.Call(inChan, outChan, cmd.Arguments)
 	return outChan
 }
@@ -92,10 +91,8 @@ func runCommandString(text string) {
 	//	}
 	//}()
 	nodes := parsePipeline(text)
-	var inChan chan lib.ShellData
-
-	inChan = make(chan lib.ShellData)
-	close(inChan) // ### not what we should do really
+	inChan := lib.NewChannel()
+	inChan.Close() // ### not what we should do really
 
 	for _, node := range nodes {
 		//log.Printf("Running node %+v", node)
@@ -106,17 +103,17 @@ func runCommandString(text string) {
 	present(inChan)
 }
 
-func runUnion(node UnionNode, inChan chan lib.ShellData) chan lib.ShellData {
+func runUnion(node UnionNode, inChan *lib.Channel) *lib.Channel {
 	leftOutChan := runNode(inChan, node.Left)
 	rightOutChan := runNode(inChan, node.Right)
-	unionChan := make(chan lib.ShellData)
+	unionChan := lib.NewChannel()
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	pipeChan := func(readFrom, writeTo chan lib.ShellData) {
-		for in := range readFrom {
-			writeTo <- in
+	pipeChan := func(readFrom, writeTo *lib.Channel) {
+		for in, ok := readFrom.Read(); ok; in, ok = readFrom.Read() {
+			writeTo.Write(in)
 		}
 		wg.Done()
 	}
@@ -134,13 +131,13 @@ func runUnion(node UnionNode, inChan chan lib.ShellData) chan lib.ShellData {
 	// pipeline, we use a WaitGroup plus an asynchronous goroutine below.
 	go func() {
 		wg.Wait()
-		close(unionChan)
+		unionChan.Close()
 	}()
 
 	return unionChan
 }
 
-func runDifference(node DifferenceNode, inChan chan lib.ShellData) chan lib.ShellData {
+func runDifference(node DifferenceNode, inChan *lib.Channel) *lib.Channel {
 	leftOutChan := runNode(inChan, node.Left)
 	rightOutChan := runNode(inChan, node.Right)
 
@@ -150,8 +147,8 @@ func runDifference(node DifferenceNode, inChan chan lib.ShellData) chan lib.Shel
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	pipeChan := func(outChan chan lib.ShellData, data *[]lib.ShellData) {
-		for newData := range outChan {
+	pipeChan := func(inChan *lib.Channel, data *[]lib.ShellData) {
+		for newData, ok := inChan.Read(); ok; newData, ok = inChan.Read() {
 			*data = append(*data, newData)
 		}
 		wg.Done()
@@ -165,7 +162,7 @@ func runDifference(node DifferenceNode, inChan chan lib.ShellData) chan lib.Shel
 	wg.Wait()
 
 	// But we must stream our data out asynchronously.
-	differenceChan := make(chan lib.ShellData)
+	differenceChan := lib.NewChannel()
 	go func() {
 		// ### this is O(n^n) and it really shouldn't be.
 		for _, left := range leftData {
@@ -178,16 +175,16 @@ func runDifference(node DifferenceNode, inChan chan lib.ShellData) chan lib.Shel
 			}
 
 			if !found {
-				differenceChan <- left
+				differenceChan.Write(left)
 			}
 		}
-		close(differenceChan)
+		differenceChan.Close()
 	}()
 
 	return differenceChan
 }
 
-func runNode(inChan chan lib.ShellData, node PipelineNode) chan lib.ShellData {
+func runNode(inChan *lib.Channel, node PipelineNode) *lib.Channel {
 	switch typedNode := node.(type) {
 	case Command:
 		return runCommand(typedNode, inChan)
@@ -206,26 +203,26 @@ func runNode(inChan chan lib.ShellData, node PipelineNode) chan lib.ShellData {
 type LastCmd struct {
 }
 
-func (this LastCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this LastCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	for _, last := range lastOut {
-		outChan <- last
+		outChan.Write(last)
 	}
-	close(outChan)
+	outChan.Close()
 }
 
 // ### used by last command. ideally, it would somehow keep hold of this itself
 var lastOut []lib.ShellData
 
 // Wait for a command to finish, presenting data as it arrives.
-func present(outChan chan lib.ShellData) {
+func present(outChan *lib.Channel) {
 	var newOut []lib.ShellData
 	const presentDebug = false
-	for res := range outChan {
-		newOut = append(newOut, res)
+	for in, ok := outChan.Read(); ok; in, ok = outChan.Read() {
+		newOut = append(newOut, in)
 		if presentDebug {
-			fmt.Printf("%T: %s", res, res.Present())
+			fmt.Printf("%T: %s", in, in.Present())
 		} else {
-			fmt.Printf("%s", res.Present())
+			fmt.Printf("%s", in.Present())
 		}
 	}
 	lastOut = newOut

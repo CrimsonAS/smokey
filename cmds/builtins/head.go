@@ -9,7 +9,7 @@ import (
 // Pass the top n pieces of input
 type HeadCmd struct{}
 
-func (this HeadCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this HeadCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) == 0 {
 		panic("How much do you want?")
 	}
@@ -19,8 +19,8 @@ func (this HeadCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, 
 		panic(fmt.Sprintf("Can't parse head arg %s: %s", arguments[0], err))
 	}
 
-	for in := range inChan {
-		outChan <- in
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		outChan.Write(in)
 		inputLines--
 
 		if inputLines == 0 {
@@ -28,5 +28,5 @@ func (this HeadCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, 
 		}
 	}
 
-	close(outChan)
+	outChan.Close()
 }

@@ -9,15 +9,15 @@ import (
 type ExplodeCmd struct {
 }
 
-func (this ExplodeCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
-	for in := range inChan {
+func (this ExplodeCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if explodable, ok := in.(lib.ExplodableData); ok {
 			for _, new := range explodable.Explode() {
-				outChan <- new
+				outChan.Write(new)
 			}
 		} else {
-			outChan <- in
+			outChan.Write(in)
 		}
 	}
-	close(outChan)
+	outChan.Close()
 }

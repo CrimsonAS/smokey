@@ -9,15 +9,15 @@ import (
 type WcCmd struct {
 }
 
-func (this WcCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this WcCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	count := 0
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if explodable, ok := in.(lib.ExplodableData); ok {
 			count += len(explodable.Explode())
 		} else {
 			count += 1
 		}
 	}
-	outChan <- lib.ShellInt(count)
-	close(outChan)
+	outChan.Write(lib.ShellInt(count))
+	outChan.Close()
 }

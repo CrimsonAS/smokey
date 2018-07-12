@@ -8,18 +8,18 @@ import (
 // Grep the input for an argument to filter by.
 type GrepCmd struct{}
 
-func (this GrepCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, arguments []string) {
+func (this GrepCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
 	if len(arguments) == 0 {
 		panic("no argument to grep")
 	}
 
 	searchStr := arguments[0]
 
-	for in := range inChan {
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
 		if strings.Contains(in.Present(), searchStr) {
-			outChan <- in
+			outChan.Write(in)
 		}
 	}
 
-	close(outChan)
+	outChan.Close()
 }
