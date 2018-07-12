@@ -68,6 +68,14 @@ func runCommand(cmd Command, inChan chan lib.ShellData) chan lib.ShellData {
 		commandObject = builtins.PpCmd{}
 	case "wc":
 		commandObject = builtins.WcCmd{}
+	case "int":
+		commandObject = builtins.IntCmd{}
+	case "sum":
+		commandObject = builtins.SumCmd{}
+	case "min":
+		commandObject = builtins.MinCmd{}
+	case "max":
+		commandObject = builtins.MaxCmd{}
 	default:
 		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 	}
