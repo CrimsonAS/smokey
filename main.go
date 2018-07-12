@@ -80,6 +80,8 @@ func runCommand(cmd Command, inChan *lib.Channel) *lib.Channel {
 	case "exit":
 		exited = true
 		commandObject = builtins.EchoCmd{}
+	case "pc":
+		commandObject = PcCmd{}
 	default:
 		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 	}
