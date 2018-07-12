@@ -1,7 +1,6 @@
 package builtins
 
 import (
-	"fmt"
 	"github.com/CrimsonAS/smokey/lib"
 )
 
@@ -19,6 +18,6 @@ func (this WcCmd) Call(inChan chan lib.ShellData, outChan chan lib.ShellData, ar
 			count += 1
 		}
 	}
-	outChan <- lib.ShellString(fmt.Sprintf("%d", count))
+	outChan <- lib.ShellInt(count)
 	close(outChan)
 }

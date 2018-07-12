@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -20,19 +19,18 @@ func (this ShellTime) Present() string {
 func (this ShellTime) SelectProperty(prop string) ShellData {
 	switch prop {
 	case "day":
-		return ShellString(fmt.Sprintf("%d", time.Time(this).Day()))
+		return ShellInt(time.Time(this).Day())
 	case "month":
-		return ShellString(fmt.Sprintf("%d", time.Time(this).Month()))
+		return ShellInt(time.Time(this).Month())
 	case "year":
-		return ShellString(fmt.Sprintf("%d", time.Time(this).Year()))
+		return ShellInt(time.Time(this).Year())
 	case "hour":
-		return ShellString(fmt.Sprintf("%d", time.Time(this).Hour()))
+		return ShellInt(time.Time(this).Hour())
 	case "minute":
-		return ShellString(fmt.Sprintf("%d", time.Time(this).Minute()))
+		return ShellInt(time.Time(this).Minute())
 	case "second":
-		return ShellString(fmt.Sprintf("%d", time.Time(this).Second()))
+		return ShellInt(time.Time(this).Second())
 	}
 
-	log.Printf("Whoops?")
 	return nil
 }
