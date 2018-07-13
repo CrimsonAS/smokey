@@ -29,8 +29,8 @@ func runCommand(cmd Command, inChan *lib.Channel) *lib.Channel {
 		commandObject = builtins.SpCmd{}
 	case "unwrap":
 		commandObject = builtins.UnwrapCmd{}
-	case "influxConnect":
-		commandObject = influx.InfluxConnect{}
+	case "url":
+		commandObject = builtins.UrlCmd{}
 	case "influxQuery":
 		commandObject = influx.InfluxQuery{}
 	case "ps":

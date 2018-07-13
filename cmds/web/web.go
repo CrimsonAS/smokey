@@ -5,51 +5,32 @@ import (
 	"github.com/CrimsonAS/smokey/lib"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
-// A URI representing a remote resource
-type shellUri struct {
-	uri string
-}
-
-func (this *shellUri) Data() lib.ShellBuffer {
-	resp, err := http.Get(this.uri)
-	if err != nil {
-		panic(fmt.Sprintf("Can't read URI %s: %s", this.uri, err))
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(fmt.Sprintf("Can't read URI body %s: %s", this.uri, err))
-	}
-
-	return lib.ShellBuffer(body)
-}
-
-func (this *shellUri) Explode() []lib.ShellData {
-	return this.Data().Explode()
-}
-
-func (this *shellUri) Present() string {
-	return fmt.Sprintf("%s\n", this.uri)
-}
-
-// Turn arguments into URI
+// Fetch URLs
 type FetchCmd struct{}
 
 func (this FetchCmd) Call(inChan, outChan *lib.Channel, arguments []string) {
-	if len(arguments) == 0 {
-		panic("What do you want to fetch?")
-	}
-
-	for _, uri := range arguments {
-		// Kind of artificial limitation. Should not modify another scheme...
-		// Handle this better ###
-		if !strings.HasPrefix(uri, "https://") && !strings.HasPrefix(uri, "http://") {
-			uri = "https://" + uri
+	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
+		if url, isUrl := in.(*lib.ShellUrl); isUrl {
+			switch url.Scheme {
+			case "":
+				panic(fmt.Sprintf("Can't assume a scheme for fetch on %s", url))
+			case "http":
+				fallthrough
+			case "https":
+				resp, err := http.Get(url.String())
+				if err != nil {
+					panic(fmt.Sprintf("Can't read URL %s: %s", url, err))
+				}
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(fmt.Sprintf("Can't read URL body %s: %s", url, err))
+				}
+				resp.Body.Close()
+				outChan.Write(lib.ShellBuffer(body))
+			}
 		}
-		outChan.Write(&shellUri{uri})
 	}
 
 	outChan.Close()

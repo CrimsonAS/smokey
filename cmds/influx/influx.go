@@ -6,21 +6,6 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 )
 
-// A URI representing an influx connection
-type influxConnection struct {
-	addr string
-	user string
-	pass string
-}
-
-func (this *influxConnection) Data() lib.ShellBuffer {
-	return lib.ShellBuffer{}
-}
-
-func (this *influxConnection) Present() string {
-	return fmt.Sprintf("influx:%s@%s\n", this.user, this.addr)
-}
-
 type influxSeries struct {
 	Name    string
 	Tags    map[string]string
@@ -63,22 +48,6 @@ func (this *influxRow) Present() string {
 	return fmt.Sprintf("%s\n", this.Values)
 }
 
-// Create an influx connection
-type InfluxConnect struct{}
-
-func (this InfluxConnect) Call(inChan, outChan *lib.Channel, arguments []string) {
-	if len(arguments) < 3 {
-		panic("What do you want to connect to?")
-	}
-
-	outChan.Write(&influxConnection{
-		addr: arguments[0],
-		user: arguments[1],
-		pass: arguments[2],
-	})
-	outChan.Close()
-}
-
 // Execute an Influx query on every provided connection
 type InfluxQuery struct{}
 
@@ -88,23 +57,27 @@ func (this InfluxQuery) Call(inChan, outChan *lib.Channel, arguments []string) {
 	}
 
 	for in, ok := inChan.Read(); ok; in, ok = inChan.Read() {
-		influxConn := in.(*influxConnection)
+		influxConn := in.(*lib.ShellUrl)
+
+		pw, _ := influxConn.User.Password()
+		u := influxConn.User.Username()
+		influxConn.User = nil
 		c, err := client.NewHTTPClient(client.HTTPConfig{
-			Addr:     influxConn.addr,
-			Username: influxConn.user,
-			Password: influxConn.pass,
+			Addr:     influxConn.String(),
+			Username: u,
+			Password: pw,
 		})
 		if err != nil {
-			panic(fmt.Sprintf("Can't create HTTP client %s: %s", influxConn.addr, err))
+			panic(fmt.Sprintf("Can't create HTTP client %s: %s", influxConn.String(), err))
 		}
 
 		q := client.NewQuery(arguments[0], arguments[1], arguments[2])
 		resp, err := c.Query(q)
 		if err != nil {
-			panic(fmt.Sprintf("Error querying %s: %s", influxConn.addr, err))
+			panic(fmt.Sprintf("Error querying %s: %s", influxConn.String(), err))
 		}
 		if resp.Error() != nil { // because apparently returning an error isn't enough.
-			panic(fmt.Sprintf("Error querying %s: %s", influxConn.addr, resp.Error()))
+			panic(fmt.Sprintf("Error querying %s: %s", influxConn.String(), resp.Error()))
 		}
 
 		for _, result := range resp.Results {
