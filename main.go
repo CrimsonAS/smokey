@@ -8,8 +8,10 @@ import (
 	"github.com/CrimsonAS/smokey/cmds/influx"
 	"github.com/CrimsonAS/smokey/cmds/web"
 	"github.com/CrimsonAS/smokey/lib"
+	"log"
 	"os"
 	"reflect"
+	"runtime/trace"
 	"strings"
 	"sync"
 )
@@ -75,6 +77,9 @@ func runCommand(cmd Command, inChan *lib.Channel) *lib.Channel {
 		commandObject = builtins.MinCmd{}
 	case "max":
 		commandObject = builtins.MaxCmd{}
+	case "exit":
+		exited = true
+		commandObject = builtins.EchoCmd{}
 	default:
 		commandObject = cmds.StandardProcessCmd{Process: cmd.Command}
 	}
@@ -228,13 +233,34 @@ func present(outChan *lib.Channel) {
 	lastOut = newOut
 }
 
+var exited = false
+
+const shouldTrace = false
+
 func main() {
+	if shouldTrace {
+		log.Printf("Tracing")
+		f, err := os.Create("trace.out")
+		if err != nil {
+			panic(err)
+		}
+		err = trace.Start(f)
+		if err != nil {
+			panic(err)
+		}
+		defer func() {
+			log.Printf("Stopping trace")
+			trace.Stop()
+			f.Close()
+		}()
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("smokey the shell")
 	fmt.Println("try something like echo hello my friend | cat")
 	fmt.Println("---------------------")
 
-	for {
+	for !exited {
 		fmt.Print("% ")
 		text, _ := reader.ReadString('\n')
 		text = strings.Replace(text, "\n", "", -1)
